@@ -5,10 +5,10 @@ This is a simple remote system monitoring tool. It consists of a server and a cl
 There will be no guarantee for the functionality of this software. Use at your own risk!
 ## Usage
 ### Client
-* start the client with `python3 client.py`
+* start the client with `python3 sysmon_client.py`
 
 ### Server
-* start the server with `python3 server.py`
+* start the server with `python3 sysmon_server.py`
 * press 'p' and 'enter' to ping the clients
 * press 's' and 'enter' to start the client monitoring
 * ctrl+c twice to stop the server
