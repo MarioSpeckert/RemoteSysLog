@@ -5,8 +5,6 @@ import os
 import argparse
 import subprocess
 
-from ftplib import FTP
-
 import psutil
 import time
 import datetime
