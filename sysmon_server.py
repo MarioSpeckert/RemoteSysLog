@@ -91,6 +91,9 @@ class Server():
     def send_to_known_clients(self, data):
         for ip in self.clients:
             self.sock_server.sendto(data, (ip , self.server_port))
+    
+    def list_clients(self):
+        print(self.clients)
 
     def exit(self):
         self.log_file.close()
@@ -110,6 +113,8 @@ def main():
             server.exit()
         if c == 'x':
             server.send_stop()
+        if c == 'l':
+            server.list_clients()
     sys.exit(0)
 
 
