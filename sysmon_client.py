@@ -12,6 +12,8 @@ import datetime
 from socket import *
 import threading
 
+# adjust the interval to your needs
+interval = 60 # seconds
 class SysPerfMonitor:
 
     def __init__(self) -> None:
@@ -53,6 +55,7 @@ class Server():
         self.init_server_socket()
         self.ping_thread = threading.Thread(target=self.receive_ping)
         self.server_thread = threading.Thread(target=self.server)
+        self.log_file = open('sysmon_log.txt', 'a')
 
     def init_ping_socket(self):
         self.sock_ping = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP) # UDP
@@ -104,7 +107,8 @@ class Server():
             data["core_temp"] = self.perf_monitor.get_core_temp()
             data['time'] = str(datetime.datetime.now())
             self.sock_server.sendto(str(data).encode(), (self.server_addr, self.server_port))
-            time.sleep(0.5)
+            self.log_file.write(str(data) + '\n')
+            time.sleep(interval)
 
     def stop(self):
         self.running = False
