@@ -11,6 +11,9 @@ from socket import *
 import threading
 import json
 
+# adjust the broadcast ip to your network
+broadcast_ip = '172.16.0.255'
+
 class Server():
     def __init__(self) -> None:
         self.sock_ping = None
@@ -73,7 +76,7 @@ class Server():
     
     def send_ping(self):
         print('sending ping')
-        self.sock_ping.sendto(b'sysmon_ping', ('172.16.0.255', self.ping_port))
+        self.sock_ping.sendto(b'sysmon_ping', (broadcast_ip, self.ping_port))
     
     def send_start(self):
         print('sending start')
@@ -87,6 +90,14 @@ class Server():
         for ip in self.clients:
             self.sock_server.sendto(data, (ip , self.server_port))
 
+    def exit(self):
+        self.log_file.close()
+        self.sock_server.close()
+        self.sock_ping.close()
+        del self.server_thread
+        print('press ctrl-c to exit')
+        sys.exit(0)
+
 def main():
     server = Server()
     server.start()
@@ -94,17 +105,14 @@ def main():
     while True:
         c = input('q to quit\n')
         if c == 'q':
-            break
+            #close file and stop server
+            server.exit()
         if c == 's':
             server.send_start()
         if c == 'x':
             server.send_stop()
         if c == 'p':
             server.send_ping()
-    server.stop()
-    #server.joint_all()
-    print('press ctrl-c to exit')
-    del server
     sys.exit(0)
 
 
