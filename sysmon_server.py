@@ -66,6 +66,7 @@ class Server():
     def start(self) -> None:
         self.server_thread.start()
         self.send_ping()
+        time.sleep(1)
         self.send_start()
 
     def stop(self) -> None:
