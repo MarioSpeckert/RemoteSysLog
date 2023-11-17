@@ -115,6 +115,10 @@ def main():
             server.send_stop()
         if c == 'l':
             server.list_clients()
+        if c == 's':
+            server.send_start()
+        if c == 'p':
+            server.send_ping()
     sys.exit(0)
 
 
