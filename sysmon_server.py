@@ -65,6 +65,8 @@ class Server():
 
     def start(self) -> None:
         self.server_thread.start()
+        self.send_ping()
+        self.send_start()
 
     def stop(self) -> None:
         self.running = False
@@ -101,18 +103,13 @@ class Server():
 def main():
     server = Server()
     server.start()
-    print('ping')
     while True:
         c = input('q to quit\n')
         if c == 'q':
             #close file and stop server
             server.exit()
-        if c == 's':
-            server.send_start()
         if c == 'x':
             server.send_stop()
-        if c == 'p':
-            server.send_ping()
     sys.exit(0)
 
 
