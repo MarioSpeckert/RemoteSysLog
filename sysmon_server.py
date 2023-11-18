@@ -12,10 +12,12 @@ import threading
 import json
 
 # adjust the broadcast ip to your network
-broadcast_ip = '192.168.2.255'
+broadcast_ip = '172.16.0.255'
+logfile_path = '/home/RPI4/sysmon_log.txt'
 
 class Server():
-    def __init__(self) -> None:
+    def __init__(self, options) -> None:
+        self.broadcast_ip = options.broadcast_ip
         self.sock_ping = None
         self.sock_server = None
         self.ping_port = 12345
@@ -27,7 +29,7 @@ class Server():
         self.init_server_socket()
         self.running = True
         self.clients = []
-        self.log_file = open('/home/mario/sysmon_log.txt', 'a')
+        self.log_file = open(options.log, 'a')
         self.send_sockets = []
 
     def init_send_socket(self, ip):
@@ -55,18 +57,14 @@ class Server():
 
     def receive_data(self):
         while True:
-            print('waiting for connection')
             sock, addr = self.sock_server.accept()
 
-            print('accepted connection')
             data = sock.recv(1024)
             data = data.decode('utf-8')
-            print(data)
             if data == 'sysmon_pong':
-                print('sysmon_pong')
                 ip = addr[0]
                 if ip not in self.clients:
-                    print('new client')
+                    print('new client with ip ' + ip + ' added')
                     self.clients.append(ip)
                     self.init_send_socket(ip)
 
@@ -94,15 +92,12 @@ class Server():
         self.server_thread.join()
     
     def send_ping(self):
-        print('sending ping')
-        self.sock_ping.sendto(b'sysmon_ping', (broadcast_ip, self.ping_port))
+        self.sock_ping.sendto(b'sysmon_ping', (self.broadcast_ip, self.ping_port))
 
     def send_start(self):
-        print('sending start')
         self.send_to_known_clients('start')
     
     def send_stop(self):
-        print('sending stop')
         self.send_to_known_clients('stop')
 
     def send_to_known_clients(self, data):
@@ -123,7 +118,18 @@ class Server():
         sys.exit(0)
 
 def main():
-    server = Server()
+
+    parser = argparse.ArgumentParser(description='Sysmon server')
+    parser.add_argument('-l', '--log', type=str,
+                         help='log file path',
+                         default=logfile_path)
+    parser.add_argument('-ip', '--broadcast_ip', type=str,
+                        help='broadcast ip',
+                        default=broadcast_ip)
+
+    options = parser.parse_args()
+    
+    server = Server(options)
     server.startup()
     while True:
         c = input('q to quit\n')
