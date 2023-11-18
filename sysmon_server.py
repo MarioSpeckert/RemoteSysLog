@@ -12,21 +12,28 @@ import threading
 import json
 
 # adjust the broadcast ip to your network
-broadcast_ip = '172.16.0.255'
+broadcast_ip = '192.168.2.255'
 
 class Server():
     def __init__(self) -> None:
         self.sock_ping = None
         self.sock_server = None
         self.ping_port = 12345
-        self.server_port = 12346
+        self.server_port = 12348
+        self.send_port = 12349
 
         self.server_thread = threading.Thread(target=self.receive_data)
         self.init_ping_socket()
         self.init_server_socket()
         self.running = True
         self.clients = []
-        self.log_file = open('sysmon_log.txt', 'a')
+        self.log_file = open('/home/mario/sysmon_log.txt', 'a')
+        self.send_sockets = []
+
+    def init_send_socket(self, ip):
+        sock_send = socket(AF_INET, SOCK_STREAM)
+        sock_send.connect((ip, self.send_port))
+        self.send_sockets.append(sock_send)
 
     def init_ping_socket(self):
         self.sock_ping = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP) # UDP
@@ -36,24 +43,33 @@ class Server():
         self.sock_ping.bind(('', self.ping_port))
 
     def init_server_socket(self):
-        self.sock_server = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-        self.sock_server.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        self.sock_server = socket(AF_INET, SOCK_STREAM)
+        self.sock_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
         self.sock_server.bind(('', self.server_port))
+        self.sock_server.listen(10)
 
     def get_ip_addr(self):
         ip = self.sock_ping.getsockname()[0]
         return ip
 
     def receive_data(self):
-        while self.running:
-            data, addr = self.sock_server.recvfrom(1024)
+        while True:
+            print('waiting for connection')
+            sock, addr = self.sock_server.accept()
+
+            print('accepted connection')
+            data = sock.recv(1024)
             data = data.decode('utf-8')
+            print(data)
             if data == 'sysmon_pong':
                 print('sysmon_pong')
                 ip = addr[0]
                 if ip not in self.clients:
                     print('new client')
                     self.clients.append(ip)
+                    self.init_send_socket(ip)
+
             if data[0] == '{':
                 data = data.replace("'", '"')
 
@@ -63,7 +79,7 @@ class Server():
                 self.log_file.flush()
 
 
-    def start(self) -> None:
+    def startup(self) -> None:
         self.server_thread.start()
         self.send_ping()
         time.sleep(1)
@@ -74,24 +90,24 @@ class Server():
         self.sock_server.close()
 
     
-    def joint_all(self):
+    def join_all(self):
         self.server_thread.join()
     
     def send_ping(self):
         print('sending ping')
         self.sock_ping.sendto(b'sysmon_ping', (broadcast_ip, self.ping_port))
-    
+
     def send_start(self):
         print('sending start')
-        self.send_to_known_clients(b'start')
+        self.send_to_known_clients('start')
     
     def send_stop(self):
         print('sending stop')
-        self.send_to_known_clients(b'stop')
+        self.send_to_known_clients('stop')
 
     def send_to_known_clients(self, data):
-        for ip in self.clients:
-            self.sock_server.sendto(data, (ip , self.server_port))
+        for sock in self.send_sockets:
+            sock.sendall(data.encode())
     
     def list_clients(self):
         print(self.clients)
@@ -100,13 +116,15 @@ class Server():
         self.log_file.close()
         self.sock_server.close()
         self.sock_ping.close()
+        for sock in self.send_sockets:
+            sock.close()
         del self.server_thread
         print('press ctrl-c to exit')
         sys.exit(0)
 
 def main():
     server = Server()
-    server.start()
+    server.startup()
     while True:
         c = input('q to quit\n')
         if c == 'q':
