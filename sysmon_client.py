@@ -80,8 +80,6 @@ class Server():
     def server(self):
         while True:
             data, addr = self.sock_server.recvfrom(1024)
-            print(data)
-            print(data.decode())
             data = data.decode()
             if data == 'start':
                 self.running = True
@@ -108,6 +106,7 @@ class Server():
             data['time'] = str(datetime.datetime.now())
             self.sock_server.sendto(str(data).encode(), (self.server_addr, self.server_port))
             self.log_file.write(str(data) + '\n')
+            self.log_file.flush()
             time.sleep(interval)
 
     def stop(self):
